@@ -4,6 +4,13 @@ from ocp_vscode import show
 from grid import Grid
 from basePlate import BasePlate
 
-grid = Grid(5, 5)
+import time
+
+grid = Grid(5,5)
 bp = BasePlate(grid)
-show(bp.get_part())
+
+start = time.time()
+part = bp.get_part()
+print(f"bp.get_part took {time.time() - start}s")
+
+show(part)

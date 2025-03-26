@@ -7,6 +7,9 @@ class BasePlate:
     def __init__(self, grid: Grid):
         self._grid = grid
 
+    algo = "profile_single"
+    algo = "extrude"
+
     x_dim = 42 * bd.MM
     y_dim = 42 * bd.MM
     radius = 4 * bd.MM
@@ -20,36 +23,78 @@ class BasePlate:
     top_chamfer_width = top_chamfer_height * math.atan(top_chamfer_angle)
     bottom_chamfer_width = bottom_chamfer_height * math.atan(bottom_chamfer_angle)
 
-    def get_single(self, x_center: float, y_center: float):
-        if self.radius <= (self.top_chamfer_width + self.bottom_chamfer_width):
-            raise Exception(f"radius {self.radius} too small, it needs to be larger than {self.top_chamfer_width + self.bottom_chamfer_width}")
+    def _get_hole(self):
+            inner_x_dim = self.x_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width)
+            inner_y_dim = self.y_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width)
 
-        path = bd.FilletPolyline(
-            bd.Vector(x_center - self.x_dim / 2, y_center + self.y_dim / 2),
-            bd.Vector(x_center - self.x_dim / 2, y_center - self.y_dim / 2),
-            bd.Vector(x_center + self.x_dim / 2, y_center - self.y_dim / 2),
-            bd.Vector(x_center + self.x_dim / 2, y_center + self.y_dim / 2),
+            floor = bd.make_face(bd.FilletPolyline(
+                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
+                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
+                close=True,
+                radius=self.radius
+            ))
+
+            inner_x_dim = self.x_dim - 2 * (self.top_chamfer_width)
+            inner_y_dim = self.y_dim - 2 * (self.top_chamfer_width)
+
+            middle = bd.make_face(bd.FilletPolyline(
+                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
+                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
+                close=True,
+                radius=self.radius
+            ))
+
+            inner_x_dim = self.x_dim
+            inner_y_dim = self.y_dim
+
+            top = bd.make_face(bd.FilletPolyline(
+                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
+                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
+                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
+                close=True,
+                radius=self.radius
+            ))
+
+            return  bd.loft((floor,
+                                  bd.Plane.XY.offset(self.bottom_chamfer_height) * middle)) +\
+                    bd.loft((bd.Plane.XY.offset(self.bottom_chamfer_height) * middle,
+                                  bd.Plane.XY.offset(self.height-self.top_chamfer_height) * middle)) +\
+                    bd.loft((bd.Plane.XY.offset(self.bottom_chamfer_height) * middle,
+                                  bd.Plane.XY.offset(self.height-self.top_chamfer_height) * middle)) +\
+                    bd.loft((bd.Plane.XY.offset(self.height-self.top_chamfer_height) * middle,
+                                  bd.Plane.XY.offset(self.height) * top))
+        
+    def get_part(self):
+        grid_size = [
+            self._grid.bool_grid.shape[0] * self.x_dim,
+            self._grid.bool_grid.shape[1] * self.y_dim
+        ]
+        outer_polyline = bd.FilletPolyline(
+            bd.Vector(0 - self.x_dim / 2, grid_size[1] - self.y_dim / 2),
+            bd.Vector(0 - self.x_dim / 2, 0 - self.y_dim / 2),
+            bd.Vector(grid_size[0] - self.x_dim / 2, 0 - self.y_dim / 2),
+            bd.Vector(grid_size[0] - self.x_dim / 2, grid_size[1] - self.y_dim / 2),
             close=True,
             radius=self.radius
         )
 
-        profile = bd.Polyline(
-            bd.Vector(0, 0),
-            bd.Vector(self.top_chamfer_width + self.bottom_chamfer_width,0),
-            bd.Vector(self.top_chamfer_width, self.bottom_chamfer_height),
-            bd.Vector(self.top_chamfer_width, self.height - self.top_chamfer_height),
-            bd.Vector(0, self.height),
-            close=True
-        )
+        hole = self._get_hole()
 
-        profile = bd.Plane.XZ * profile
-        profile = bd.Pos(x_center - self.x_dim / 2, y_center, 0) * profile
-
-        return bd.sweep(profile, path)
-
-    def get_part(self):
-        res = bd.Sketch()
+        holes = []
         for index, val in np.ndenumerate(self._grid.bool_grid):
-            if val:
-                res += self.get_single(index[0] * self.x_dim, index[1] * self.y_dim)
-        return res
+            if not val:
+                continue
+
+            x_center = index[0] * self.x_dim
+            y_center = index[1] * self.y_dim
+
+            holes.append(bd.Pos(x_center, y_center) * hole)
+
+        block = bd.extrude(bd.make_face(outer_polyline), self.height)
+
+        return block - holes
