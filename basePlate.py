@@ -2,11 +2,26 @@ import build123d as bd
 import math
 import numpy as np
 
-class BasePlate:
-    def __init__(self, x_units: int, y_units: int):
+class BasePlate(bd.BasePartObject):
+    def __init__(
+        self,
+        x_units: int,
+        y_units: int,
+        rotation: bd.RotationLike = (0, 0, 0),
+        align: bd.Align | tuple[bd.Align, bd.Align, bd.Align] = (
+            bd.Align.CENTER,
+            bd.Align.CENTER,
+            bd.Align.CENTER,
+        ),
+        mode: bd.Mode = bd.Mode.ADD
+    ):
         self.x_units: int = x_units
         self.y_units: int = y_units
-
+        
+        super().__init__(
+            part=self._get_part(), rotation=rotation, align=bd.tuplify(align, 3), mode=mode
+        )
+    
     x_dim: float = 42 * bd.MM
     y_dim: float = 42 * bd.MM
     radius: float = 4 * bd.MM
@@ -86,7 +101,7 @@ class BasePlate:
         outline = self._get_outline()
         return bd.extrude(bd.make_face(outline), self.height)
 
-    def get_part(self):
+    def _get_part(self):
         hole = self._get_hole()
         holes_grid = []
         for x in range(self.x_units):
