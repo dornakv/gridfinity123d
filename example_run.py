@@ -1,13 +1,11 @@
 import build123d as bd
 from ocp_vscode import show
 
-from grid import Grid
 from basePlate import BasePlate
 
 import time
 
-grid = Grid(5,5)
-bp = BasePlate(grid)
+bp = BasePlate(5,3)
 
 start = time.time()
 part = bp.get_part()

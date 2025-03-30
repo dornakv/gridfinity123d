@@ -1,24 +1,21 @@
-from grid import Grid
 import build123d as bd
 import math
 import numpy as np
 
 class BasePlate:
-    def __init__(self, grid: Grid):
-        self._grid = grid
+    def __init__(self, x_units: int, y_units: int):
+        self.x_units: int = x_units
+        self.y_units: int = y_units
 
-    algo = "profile_single"
-    algo = "extrude"
+    x_dim: float = 42 * bd.MM
+    y_dim: float = 42 * bd.MM
+    radius: float = 4 * bd.MM
 
-    x_dim = 42 * bd.MM
-    y_dim = 42 * bd.MM
-    radius = 4 * bd.MM
-
-    height = 4.65 * bd.MM
-    top_chamfer_height = 2.15 * bd.MM
-    top_chamfer_angle = math.pi / 2  # from horizontal
-    bottom_chamfer_height = 0.7 * bd.MM
-    bottom_chamfer_angle = math.pi / 2  # from horizontal
+    height: float= 4.65 * bd.MM
+    top_chamfer_height: float = 2.15 * bd.MM
+    top_chamfer_angle: float = math.pi / 2  # from horizontal
+    bottom_chamfer_height: float = 0.7 * bd.MM
+    bottom_chamfer_angle: float = math.pi / 2  # from horizontal
 
     top_chamfer_width = top_chamfer_height * math.atan(top_chamfer_angle)
     bottom_chamfer_width = bottom_chamfer_height * math.atan(bottom_chamfer_angle)
@@ -68,13 +65,14 @@ class BasePlate:
                                   bd.Plane.XY.offset(self.height-self.top_chamfer_height) * middle)) +\
                     bd.loft((bd.Plane.XY.offset(self.height-self.top_chamfer_height) * middle,
                                   bd.Plane.XY.offset(self.height) * top))
-        
-    def get_part(self):
+
+    def _get_outline(self):
         grid_size = [
-            self._grid.bool_grid.shape[0] * self.x_dim,
-            self._grid.bool_grid.shape[1] * self.y_dim
+            self.x_units * self.x_dim,
+            self.y_units * self.y_dim
         ]
-        outer_polyline = bd.FilletPolyline(
+
+        return bd.FilletPolyline(
             bd.Vector(0 - self.x_dim / 2, grid_size[1] - self.y_dim / 2),
             bd.Vector(0 - self.x_dim / 2, 0 - self.y_dim / 2),
             bd.Vector(grid_size[0] - self.x_dim / 2, 0 - self.y_dim / 2),
@@ -82,19 +80,23 @@ class BasePlate:
             close=True,
             radius=self.radius
         )
+    
+    def _get_outline_block(self):
+        outline = self._get_outline()
+        return bd.extrude(bd.make_face(outline), self.height)
 
+    def get_part(self):
         hole = self._get_hole()
+        outline = self._get_outline()
 
-        holes = []
-        for index, val in np.ndenumerate(self._grid.bool_grid):
-            if not val:
-                continue
+        holes_grid = []
+        for x in range(self.x_units):
+            for y in range(self.y_units):
+                x_center = x * self.x_dim
+                y_center = y * self.y_dim
 
-            x_center = index[0] * self.x_dim
-            y_center = index[1] * self.y_dim
+                holes_grid.append(bd.Pos(x_center, y_center) * hole)
 
-            holes.append(bd.Pos(x_center, y_center) * hole)
+        outline_block = self._get_outline_block()
 
-        block = bd.extrude(bd.make_face(outer_polyline), self.height)
-
-        return block - holes
+        return outline_block - holes_grid
