@@ -13,12 +13,9 @@ class BasePlate:
 
     height: float= 4.65 * bd.MM
     top_chamfer_height: float = 2.15 * bd.MM
-    top_chamfer_angle: float = math.pi / 2  # from horizontal
+    top_chamfer_width: float = 2.15 * bd.MM
     bottom_chamfer_height: float = 0.7 * bd.MM
-    bottom_chamfer_angle: float = math.pi / 2  # from horizontal
-
-    top_chamfer_width = top_chamfer_height * math.atan(top_chamfer_angle)
-    bottom_chamfer_width = bottom_chamfer_height * math.atan(bottom_chamfer_angle)
+    bottom_chamfer_width: float = 0.7 * bd.MM
 
     def _get_hole(self):
             inner_x_dim = self.x_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width)
