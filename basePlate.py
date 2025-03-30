@@ -14,14 +14,16 @@ class BasePlate:
     height: float= 4.65 * bd.MM
     top_chamfer_height: float = 2.15 * bd.MM
     top_chamfer_width: float = 2.15 * bd.MM
-    top_chamfer_lower_radius = radius - top_chamfer_width
     bottom_chamfer_height: float = 0.7 * bd.MM
     bottom_chamfer_width: float = 0.7 * bd.MM
-    bottom_chamfer_lower_radius = radius - top_chamfer_width - bottom_chamfer_width
+    
 
     def _get_hole(self):
             inner_x_dim = self.x_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width)
             inner_y_dim = self.y_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width)
+
+            top_chamfer_lower_radius = self.radius - self.top_chamfer_width
+            bottom_chamfer_lower_radius = self.radius - self.top_chamfer_width - self.bottom_chamfer_width
 
             floor = bd.make_face(bd.FilletPolyline(
                 bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
@@ -29,7 +31,7 @@ class BasePlate:
                 bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
                 bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
                 close=True,
-                radius=self.bottom_chamfer_lower_radius
+                radius=bottom_chamfer_lower_radius
             ))
 
             inner_x_dim = self.x_dim - 2 * (self.top_chamfer_width)
@@ -41,7 +43,7 @@ class BasePlate:
                 bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
                 bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
                 close=True,
-                radius=self.top_chamfer_lower_radius
+                radius=top_chamfer_lower_radius
             ))
 
             inner_x_dim = self.x_dim
@@ -86,8 +88,6 @@ class BasePlate:
 
     def get_part(self):
         hole = self._get_hole()
-        outline = self._get_outline()
-
         holes_grid = []
         for x in range(self.x_units):
             for y in range(self.y_units):
