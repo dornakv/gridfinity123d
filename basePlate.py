@@ -1,5 +1,7 @@
 import build123d as bd
 from basePlateMeasurements import BasePlateMeasurements
+import constants
+import common
 
 class BasePlate(bd.BasePartObject):
     def __init__(
@@ -15,88 +17,99 @@ class BasePlate(bd.BasePartObject):
         ),
         mode: bd.Mode = bd.Mode.ADD
     ):
+        self._measurements = measurements
+
+        if x_units < 1: raise ValueError(f"{x_units=} must be at least 1")
+        if y_units < 1: raise ValueError(f"{y_units=} must be at least 1")
+        self._x_units = x_units
+        self._y_units = y_units
+
         super().__init__(
-            part=self._get_part(x_units, y_units, measurements), rotation=rotation, align=bd.tuplify(align, 3), mode=mode
-        )
-
-    def _get_hole(self, measurements: BasePlateMeasurements):
-            inner_x_dim = measurements.x_dim - 2 * (measurements.top_chamfer_width + measurements.bottom_chamfer_width)
-            inner_y_dim = measurements.y_dim - 2 * (measurements.top_chamfer_width + measurements.bottom_chamfer_width)
-
-            top_chamfer_lower_radius = measurements.radius - measurements.top_chamfer_width
-            bottom_chamfer_lower_radius = measurements.radius - measurements.top_chamfer_width - measurements.bottom_chamfer_width
-
-            floor = bd.make_face(bd.FilletPolyline(
-                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
-                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
-                close=True,
-                radius=bottom_chamfer_lower_radius
-            ))
-
-            inner_x_dim = measurements.x_dim - 2 * (measurements.top_chamfer_width)
-            inner_y_dim = measurements.y_dim - 2 * (measurements.top_chamfer_width)
-
-            middle = bd.make_face(bd.FilletPolyline(
-                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
-                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
-                close=True,
-                radius=top_chamfer_lower_radius
-            ))
-
-            inner_x_dim = measurements.x_dim
-            inner_y_dim = measurements.y_dim
-
-            top = bd.make_face(bd.FilletPolyline(
-                bd.Vector(0 - inner_x_dim / 2, 0 + inner_y_dim / 2),
-                bd.Vector(0 - inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 - inner_y_dim / 2),
-                bd.Vector(0 + inner_x_dim / 2, 0 + inner_y_dim / 2),
-                close=True,
-                radius=measurements.radius
-            ))
-
-            return  bd.loft((floor,
-                                  bd.Plane.XY.offset(measurements.bottom_chamfer_height) * middle)) +\
-                    bd.loft((bd.Plane.XY.offset(measurements.bottom_chamfer_height) * middle,
-                                  bd.Plane.XY.offset(measurements.height-measurements.top_chamfer_height) * middle)) +\
-                    bd.loft((bd.Plane.XY.offset(measurements.bottom_chamfer_height) * middle,
-                                  bd.Plane.XY.offset(measurements.height-measurements.top_chamfer_height) * middle)) +\
-                    bd.loft((bd.Plane.XY.offset(measurements.height-measurements.top_chamfer_height) * middle,
-                                  bd.Plane.XY.offset(measurements.height) * top))
-
-    def _get_outline(self, x_units: int, y_units: int, measurements: BasePlateMeasurements):
-        grid_size = [
-            x_units * measurements.x_dim,
-            y_units * measurements.y_dim
-        ]
-
-        return bd.FilletPolyline(
-            bd.Vector(0 - measurements.x_dim / 2, grid_size[1] - measurements.y_dim / 2),
-            bd.Vector(0 - measurements.x_dim / 2, 0 - measurements.y_dim / 2),
-            bd.Vector(grid_size[0] - measurements.x_dim / 2, 0 - measurements.y_dim / 2),
-            bd.Vector(grid_size[0] - measurements.x_dim / 2, grid_size[1] - measurements.y_dim / 2),
-            close=True,
-            radius=measurements.radius
+            part=self._get_part(), rotation=rotation, align=bd.tuplify(align, 3), mode=mode
         )
     
-    def _get_outline_block(self, x_units: int, y_units: int, measurements: BasePlateMeasurements):
-        outline = self._get_outline(x_units, y_units, measurements)
-        return bd.extrude(bd.make_face(outline), measurements.height)
+    @property
+    def x_units(self): return self._x_units
+    @property
+    def y_units(self): return self._y_units
+    @property
+    def x_unit_dim(self): return self._measurements.x_unit_dim
+    @property
+    def y_unit_dim(self): return self._measurements.x_unit_dim
+    @property
+    def radius(self): return self._measurements.radius
+    @property 
+    def height(self): return self._measurements.height
+    @property
+    def top_chamfer_height(self): return self._measurements.top_chamfer_height
+    @property
+    def top_chamfer_width(self): return self._measurements.top_chamfer_width
+    @property
+    def bottom_chamfer_height(self): return self._measurements.bottom_chamfer_height
+    @property
+    def bottom_chamfer_width(self): return self._measurements.bottom_chamfer_width
 
-    def _get_part(self, x_units: int, y_units: int, measurements: BasePlateMeasurements):
-        hole = self._get_hole(measurements)
+    def _get_hole(self):
+        if self.bottom_chamfer_height + self.top_chamfer_height > self.height:
+            raise ValueError(f"{self.bottom_chamfer_height=} + {self.top_chamfer_height=} < {self.height=}")
+
+        floor = common.GetRoundedRect(
+            self.x_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width),
+            self.radius - self.top_chamfer_width - self.bottom_chamfer_width
+        ) 
+
+        middle = common.GetRoundedRect(
+            self.x_unit_dim - 2 * (self.top_chamfer_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width),
+            self.radius - self.top_chamfer_width
+        )
+
+        top = common.GetRoundedRect(
+            self.x_unit_dim,
+            self.y_unit_dim,
+            self.radius
+        )
+
+        # TODO: Rewrite layesrs array assembly cleaner
+        layers = []
+        layers.append(floor)
+        layers.append(bd.Plane.XY.offset(self.bottom_chamfer_height) 
+                      * middle)
+        if self.height - self.top_chamfer_height - self.bottom_chamfer_height > constants.RESOLUTION:
+            layers.append(bd.Plane.XY.offset(self.height - self.top_chamfer_height) 
+                          * middle)
+        layers.append(bd.Plane.XY.offset(self.height) 
+                      * top)
+
+        return bd.loft(
+            layers,
+            ruled=True
+        )
+
+    def _get_outline(self):
+        return common.GetRoundedRect(
+            self.x_units * self.x_unit_dim,
+            self.y_units * self.y_unit_dim,
+            radius=self.radius
+            )
+    
+    def _get_outline_block(self):
+        outline = self._get_outline()
+        return bd.extrude(bd.make_face(outline), self.height)
+
+    def _get_part(self):
+        hole = self._get_hole()
         holes_grid = []
-        for x in range(x_units):
-            for y in range(y_units):
-                x_center = x * measurements.x_dim
-                y_center = y * measurements.y_dim
+        for x in range(self.x_units):
+            for y in range(self.y_units):
+                # TODO: Rewrite cleaner 
+                # moving because the outline is genrated centered in coords system
+                x_center = x * self.x_unit_dim - ( (self.x_units - 1) * self.x_unit_dim / 2)
+                y_center = y * self.y_unit_dim - ( (self.y_units - 1) * self.y_unit_dim / 2)
 
                 holes_grid.append(bd.Pos(x_center, y_center) * hole)
 
-        outline_block = self._get_outline_block(x_units, y_units, measurements)
+        outline_block = self._get_outline_block()
 
         return outline_block - holes_grid

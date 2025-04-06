@@ -1,0 +1,12 @@
+import build123d as bd
+
+
+# Values here shouldn't need changing, only when you REALLY know what you are doing
+# most values can be changed in the respective Measurement classes
+
+# For checking whether some parts would be too small to generate,
+# often due to floating point errors
+RESOLUTION = 0.001 * bd.MM
+TOLERANCE = 0.1 * bd.MM
+X_UNIT_DIM: float = 42 * bd.MM
+Y_UNIT_DIM: float = 42 * bd.MM

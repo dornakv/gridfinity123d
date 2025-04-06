@@ -1,8 +1,9 @@
 import build123d as bd
+import constants
 
 class BasePlateMeasurements():
-    x_dim: float = 42 * bd.MM
-    y_dim: float = 42 * bd.MM
+    x_unit_dim: float = constants.X_UNIT_DIM
+    y_unit_dim: float = constants.Y_UNIT_DIM
     radius: float = 4 * bd.MM
 
     height: float= 4.65 * bd.MM

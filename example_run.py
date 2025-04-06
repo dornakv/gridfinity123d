@@ -7,8 +7,8 @@ import time
 
 start = time.time()
 measurements = BasePlateMeasurements()
-measurements.x_dim = 21
-part = BasePlate(5, 3, measurements)
+# measurements.radius = 2.85
+part = BasePlate(4, 5, measurements)
 print(f"bp.get_part took {time.time() - start}s")
 
 show(part)
