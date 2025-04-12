@@ -12,3 +12,16 @@ class BasePlateMeasurements():
     bottom_chamfer_height: float = 0.7 * bd.MM
     bottom_chamfer_width: float = 0.7 * bd.MM
     top_ledge_width: float = 0 * bd.MM
+
+    @classmethod
+    def with_top_ledge(cls, top_ledge_width):
+        obj = cls()
+        if top_ledge_width <= 0: return obj
+
+        obj.top_ledge_width = top_ledge_width
+        obj.height -= top_ledge_width
+
+        top_chamfer_ratio = obj.top_chamfer_width / obj.top_chamfer_height
+        obj.top_chamfer_height -= top_ledge_width
+        obj.top_chamfer_width = top_chamfer_ratio * obj.top_chamfer_height
+        return obj
