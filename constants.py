@@ -7,6 +7,6 @@ import build123d as bd
 # For checking whether some parts would be too small to generate,
 # often due to floating point errors
 RESOLUTION = 0.001 * bd.MM
-TOLERANCE = 0.1 * bd.MM
+TOLERANCE = 0.15 * bd.MM
 X_UNIT_DIM: float = 42 * bd.MM
 Y_UNIT_DIM: float = 42 * bd.MM

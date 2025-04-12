@@ -1,5 +1,6 @@
 import build123d as bd
 from basePlateMeasurements import BasePlateMeasurements
+from basePlateShim import BasePlateShim
 import constants
 import common
 
@@ -26,6 +27,32 @@ class BasePlate(bd.BasePartObject):
 
         super().__init__(
             part=self._get_part(), rotation=rotation, align=bd.tuplify(align, 3), mode=mode
+        )
+
+    @classmethod
+    def from_shim(
+        cls,
+        basePlateShim: BasePlateShim,
+        measurements: BasePlateMeasurements = BasePlateMeasurements(),
+        rotation: bd.RotationLike = (0, 0, 0),
+        align: bd.Align | tuple[bd.Align, bd.Align, bd.Align] = (
+            bd.Align.CENTER,
+            bd.Align.CENTER,
+            bd.Align.CENTER,
+        ),
+        mode: bd.Mode = bd.Mode.ADD
+    ):
+        if basePlateShim.x_unit_dim != measurements.x_unit_dim: raise ValueError(f"{basePlateShim.x_unit_dim=} != {measurements.x_unit_dim=}")
+        if basePlateShim.y_unit_dim != measurements.y_unit_dim: raise ValueError(f"{basePlateShim.y_unit_dim=} != {measurements.y_unit_dim=}")
+        if basePlateShim.radius != measurements.radius: raise ValueError(f"{basePlateShim.radius=} != {measurements.radius=}")
+
+        return cls(
+            basePlateShim.base_plate_x_units,
+            basePlateShim.base_plate_y_units,
+            measurements=measurements,
+            rotation=rotation,
+            align=align,
+            mode=mode
         )
     
     @property
@@ -86,16 +113,13 @@ class BasePlate(bd.BasePartObject):
             layers,
             ruled=True
         )
-
-    def _get_outline(self):
-        return common.GetRoundedRect(
-            self.x_units * self.x_unit_dim,
-            self.y_units * self.y_unit_dim,
-            radius=self.radius
-            )
     
-    def _get_outline_block(self):
-        outline = self._get_outline()
+    def get_outline_block(self, tolerance: float = 0):
+        outline = common.GetRoundedRect(
+            (self.x_units * self.x_unit_dim) + (2 * tolerance),
+            (self.y_units * self.y_unit_dim) + (2 * tolerance),
+            radius=self.radius
+        )
         return bd.extrude(bd.make_face(outline), self.height)
 
     def _get_part(self):
@@ -110,6 +134,6 @@ class BasePlate(bd.BasePartObject):
 
                 holes_grid.append(bd.Pos(x_center, y_center) * hole)
 
-        outline_block = self._get_outline_block()
+        outline_block = self.get_outline_block()
 
         return outline_block - holes_grid
