@@ -11,3 +11,4 @@ class BasePlateMeasurements():
     top_chamfer_width: float = 2.15 * bd.MM
     bottom_chamfer_height: float = 0.7 * bd.MM
     bottom_chamfer_width: float = 0.7 * bd.MM
+    top_ledge_width: float = 0 * bd.MM

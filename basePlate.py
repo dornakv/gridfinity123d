@@ -75,26 +75,28 @@ class BasePlate(bd.BasePartObject):
     def bottom_chamfer_height(self): return self._measurements.bottom_chamfer_height
     @property
     def bottom_chamfer_width(self): return self._measurements.bottom_chamfer_width
+    @property
+    def top_ledge_width(self): return self._measurements.top_ledge_width
 
     def _get_hole(self):
         if self.bottom_chamfer_height + self.top_chamfer_height > self.height:
             raise ValueError(f"{self.bottom_chamfer_height=} + {self.top_chamfer_height=} < {self.height=}")
 
         floor = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width),
+            self.x_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
             self.radius - self.top_chamfer_width - self.bottom_chamfer_width
         ) 
 
         middle = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width),
+            self.x_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
             self.radius - self.top_chamfer_width
         )
 
         top = common.GetRoundedRect(
-            self.x_unit_dim,
-            self.y_unit_dim,
+            self.x_unit_dim - 2 * self.top_ledge_width,
+            self.y_unit_dim - 2 * self.top_ledge_width,
             self.radius
         )
 
