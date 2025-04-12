@@ -1,8 +1,8 @@
 import build123d as bd
 import math
 from basePlateShimMeasurements import BasePlateShimMeasurements
+import constants
 import common
-from typing import Union
 
 class BasePlateShim(bd.BasePartObject):
     def __init__(
@@ -113,7 +113,7 @@ class BasePlateShim(bd.BasePartObject):
             face_vert_edges = face.edges().filter_by(bd.Axis.Z)
             if len(face_vert_edges) != 2: continue
             face_width = face_vert_edges[0].distance_to(face_vert_edges[1])
-            allowed_fillet = face_width / 2 - self.tolerance
+            allowed_fillet = face_width / 2 - constants.RESOLUTION
             for edge in face_vert_edges:
                 if edge in edges_to_fillet:
                     curr_edge_fillet = edges_to_fillet[edge]
