@@ -105,34 +105,7 @@ class BasePlateShim(bd.BasePartObject):
     @property
     def base_plate_y_units(self): return math.floor(self._y_dim / self.y_unit_dim)        
 
-    def _get_part(self):
-        outer = bd.extrude(
-            common.GetRoundedRect(
-                self.x_dim,
-                self.y_dim,
-                0
-            ),
-            self.height / 2,
-            both=True
-        )
-        
-        if self.base_plate_x_units == 0 or self.base_plate_y_units == 0:
-            return outer
-
-        # base plate with tolerance
-        inner = self.offset * bd.extrude(
-            common.GetRoundedRect(
-                (self.base_plate_x_units * self.x_unit_dim) + (2 * self.tolerance),
-                (self.base_plate_y_units * self.y_unit_dim) + (2 * self.tolerance),
-                0
-            ),
-            self.height / 2,
-            both=True
-        )
-
-        shim = outer - inner
-        outer = None
-        inner = None
+    def _fillet_shim(self, shim: bd.Part) -> bd.Part:
         max_filelt = self.radius + self.tolerance
 
         edges_to_fillet = dict()
@@ -149,7 +122,34 @@ class BasePlateShim(bd.BasePartObject):
                     edges_to_fillet[edge] = min(allowed_fillet, max_filelt)
 
         for edge in edges_to_fillet:
-            edge.topo_parent = shim
+            edge.topo_parent = shim  # the bd.fillet does fillet on topo_parent of the edge
             shim = bd.fillet([edge], edges_to_fillet[edge])
 
         return shim
+
+    def _get_part(self):
+        outer = bd.extrude(
+            common.GetRoundedRect(
+                self.x_dim,
+                self.y_dim,
+                0
+            ),
+            self.height / 2,
+            both=True
+        )
+        
+        if self.base_plate_x_units == 0 or self.base_plate_y_units == 0:
+            return self._fillet_shim(outer)
+
+        # base plate with tolerance
+        inner = self.offset * bd.extrude(
+            common.GetRoundedRect(
+                (self.base_plate_x_units * self.x_unit_dim) + (2 * self.tolerance),
+                (self.base_plate_y_units * self.y_unit_dim) + (2 * self.tolerance),
+                0
+            ),
+            self.height / 2,
+            both=True
+        )
+
+        return self._fillet_shim(outer - inner)
