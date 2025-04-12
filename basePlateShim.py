@@ -103,7 +103,7 @@ class BasePlateShim(bd.BasePartObject):
     @property
     def base_plate_x_units(self): return math.floor(self._x_dim / self.x_unit_dim)
     @property
-    def base_plate_y_units(self): return math.floor(self._y_dim / self.y_unit_dim)
+    def base_plate_y_units(self): return math.floor(self._y_dim / self.y_unit_dim)        
 
     def _get_part(self):
         outer = bd.extrude(
@@ -131,14 +131,25 @@ class BasePlateShim(bd.BasePartObject):
         )
 
         shim = outer - inner
-        # max_filelt = self.radius + self.tolerance
-        # for face in shim.faces().filter_by(bd.Axis.Z, reverse=True):
-        #     face_vert_edges = face.edges().filter_by(bd.Axis.Z)
-        #     if len(face_vert_edges) != 2: continue
-        #     face_width = face_vert_edges[0].distance_to(face_vert_edges[1])
-        #     # if face_width / 2.0 <= max_filelt:
-        #         # shim = bd.fillet(face_vert_edges, radius=(face_width / 2.0) - self.tolerance)
-        #     print(face_vert_edges[0].distance_to(face_vert_edges[1]))
+        outer = None
+        inner = None
+        max_filelt = self.radius + self.tolerance
 
-        # shim = bd.fillet(shim.edges().filter_by(bd.Axis.Z), self.radius + self.tolerance)
+        edges_to_fillet = dict()
+        for face in shim.faces().filter_by(bd.Axis.Z, reverse=True):
+            face_vert_edges = face.edges().filter_by(bd.Axis.Z)
+            if len(face_vert_edges) != 2: continue
+            face_width = face_vert_edges[0].distance_to(face_vert_edges[1])
+            allowed_fillet = face_width / 2 - self.tolerance
+            for edge in face_vert_edges:
+                if edge in edges_to_fillet:
+                    curr_edge_fillet = edges_to_fillet[edge]
+                    edges_to_fillet[edge] = min(curr_edge_fillet, allowed_fillet)
+                else:
+                    edges_to_fillet[edge] = min(allowed_fillet, max_filelt)
+
+        for edge in edges_to_fillet:
+            edge.topo_parent = shim
+            shim = bd.fillet([edge], edges_to_fillet[edge])
+
         return shim

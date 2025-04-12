@@ -18,5 +18,5 @@ base_plate_measurements.top_chamfer_width -= base_plate_measurements.top_ledge_w
 part = BasePlate.from_shim(shim, base_plate_measurements)
 print(f"bp.get_part took {time.time() - start}s")
 
-bd.export_step(shim + shim.offset * part, "res.step")
+# bd.export_step(shim + shim.offset * part, "res.step")
 show(shim + shim.offset * part)
