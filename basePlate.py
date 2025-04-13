@@ -77,6 +77,8 @@ class BasePlate(bd.BasePartObject):
     def bottom_chamfer_width(self): return self._measurements.bottom_chamfer_width
     @property
     def top_ledge_width(self): return self._measurements.top_ledge_width
+    @property
+    def tolerance(self): return self._measurements.tolerance
 
     def _get_hole(self):
         if self.bottom_chamfer_height + self.top_chamfer_height > self.height:
@@ -116,10 +118,10 @@ class BasePlate(bd.BasePartObject):
             ruled=True
         )
     
-    def get_outline_block(self, tolerance: float = 0):
+    def get_outline_block(self):
         outline = common.GetRoundedRect(
-            (self.x_units * self.x_unit_dim) + (2 * tolerance),
-            (self.y_units * self.y_unit_dim) + (2 * tolerance),
+            (self.x_units * self.x_unit_dim) - (2 * self.tolerance),
+            (self.y_units * self.y_unit_dim) - (2 * self.tolerance),
             radius=self.radius
         )
         return bd.extrude(bd.make_face(outline), self.height)
@@ -130,7 +132,7 @@ class BasePlate(bd.BasePartObject):
         for x in range(self.x_units):
             for y in range(self.y_units):
                 # TODO: Rewrite cleaner 
-                # moving because the outline is genrated centered in coords system
+                # moving because the outline is genrated centered in the coords system
                 x_center = x * self.x_unit_dim - ( (self.x_units - 1) * self.x_unit_dim / 2)
                 y_center = y * self.y_unit_dim - ( (self.y_units - 1) * self.y_unit_dim / 2)
 

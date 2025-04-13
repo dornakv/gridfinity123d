@@ -13,6 +13,8 @@ class BasePlateMeasurements():
     bottom_chamfer_width: float = 0.7 * bd.MM
     top_ledge_width: float = 0 * bd.MM
 
+    tolerance: float = constants.TOLERANCE
+
     @classmethod
     def with_top_ledge(cls, top_ledge_width):
         obj = cls()

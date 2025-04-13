@@ -17,4 +17,5 @@ class BasePlateShimMeasurements():
         obj.y_unit_dim = basePlateMeasurements.y_unit_dim
         obj.radius = basePlateMeasurements.radius
         obj.height = basePlateMeasurements.height
+        obj.tolerance = basePlateMeasurements.tolerance
         return obj
