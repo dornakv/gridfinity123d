@@ -72,6 +72,10 @@ class BasePlate(bd.BasePartObject):
     @property
     def top_chamfer_width(self): return self._measurements.top_chamfer_width
     @property
+    def middle_chamfer_height(self): return self._measurements.middle_chamfer_height
+    @property
+    def middle_chamfer_width(self): return self._measurements.middle_chamfer_width
+    @property
     def bottom_chamfer_height(self): return self._measurements.bottom_chamfer_height
     @property
     def bottom_chamfer_width(self): return self._measurements.bottom_chamfer_width
@@ -81,16 +85,19 @@ class BasePlate(bd.BasePartObject):
     def tolerance(self): return self._measurements.tolerance
 
     def _get_hole(self):
-        if self.bottom_chamfer_height + self.top_chamfer_height > self.height:
-            raise ValueError(f"{self.bottom_chamfer_height=} + {self.top_chamfer_height=} < {self.height=}")
-
         floor = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
+            self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
             self.radius - self.top_chamfer_width - self.bottom_chamfer_width
         ) 
 
-        middle = common.GetRoundedRect(
+        middle_low = common.GetRoundedRect(
+            self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
+            self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
+            self.radius - self.top_chamfer_width
+        )
+
+        middle_high = common.GetRoundedRect(
             self.x_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
             self.y_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
             self.radius - self.top_chamfer_width
@@ -102,17 +109,21 @@ class BasePlate(bd.BasePartObject):
             self.radius
         )
 
-        # TODO: Rewrite layesrs array assembly cleaner
-        layers = []
-        layers.append(floor)
-        layers.append(bd.Plane.XY.offset(self.bottom_chamfer_height) 
-                      * middle)
-        if self.height - self.top_chamfer_height - self.bottom_chamfer_height > constants.RESOLUTION:
-            layers.append(bd.Plane.XY.offset(self.height - self.top_chamfer_height) 
-                          * middle)
-        layers.append(bd.Plane.XY.offset(self.height) 
-                      * top)
-
+        plane: bd.Plane = bd.Plane.XY
+        layers = [plane * floor]
+        if self.bottom_chamfer_height > constants.RESOLUTION:
+            plane = plane.offset(self.bottom_chamfer_height)
+            layers.append(plane * middle_low)
+        if self.middle_chamfer_height > constants.RESOLUTION:
+            plane = plane.offset(self.middle_chamfer_height)
+            layers.append(plane * middle_high)
+        if self.top_chamfer_height > constants.RESOLUTION:
+            plane = plane.offset(self.top_chamfer_height)
+            layers.append(plane * top)
+        
+        if len(layers) <= 1:
+            raise ValueError(f"None of the layers high enough ({constants.RESOLUTION=}): {self.bottom_chamfer_height=}, {self.middle_chamfer_height=}, {self.top_chamfer_height=}")
+        
         return bd.loft(
             layers,
             ruled=True
