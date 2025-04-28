@@ -84,17 +84,18 @@ class BasePlate(bd.BasePartObject):
     @property
     def tolerance(self): return self._measurements.tolerance
 
+    # TODO: Use RetentionSocket
     def _get_hole(self):
         floor = common.GetRoundedRect(
             self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
             self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
-            self.radius - self.top_chamfer_width - self.bottom_chamfer_width
+            self.radius - self.top_chamfer_width - self.middle_chamfer_width - self.bottom_chamfer_width
         ) 
 
         middle_low = common.GetRoundedRect(
             self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
             self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
-            self.radius - self.top_chamfer_width
+            self.radius - self.top_chamfer_width - self.middle_chamfer_width
         )
 
         middle_high = common.GetRoundedRect(
