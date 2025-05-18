@@ -3,11 +3,15 @@ This is not yet ready for use by anyone. Many important things are missing, many
 
 First release will be after all essentials features are complete
 
-## Missing Essential Features
+## Essential Features
+- [x] Base plate
+- [x] Base plate with ledge
+- [x] Basic bin
 - [ ] Stacking lip
 - [ ] Blank bin
 
-## Missing Extra Features
+## Extra Features
+- [x] Shim
 - [ ] Eco bin
 - [ ] Magnet holes
 - [ ] Screw holes
