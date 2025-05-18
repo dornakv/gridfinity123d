@@ -1,5 +1,6 @@
 import build123d as bd
 from binMeasurements import BinMeasurements
+from retentionSocket import RetentionSocket
 import constants
 import common
 
@@ -57,7 +58,7 @@ class Bin(bd.BasePartObject):
     def wall_thickness(self): return self._measurements.wall_thickness
 
     def _get_part(self):
-        retention_socket = common.GetRetentionSocket(self.retention_socket_measurements)
+        retention_socket = RetentionSocket(self.retention_socket_measurements)
         sockets_grid = []
         for x in range(self.x_units):
             for y in range(self.y_units):
@@ -89,12 +90,15 @@ class Bin(bd.BasePartObject):
         floor_face =  bd.make_face(floor_plane * outer_floor_outline)
         floor = bd.extrude(floor_face, -self.floor_thickness)
 
+        bin = bd.Part(wall + floor + sockets_grid)
+        
         # Fillet inner edges at floor
-        bin = wall + floor + sockets_grid
+        # TODO: first filter horizontal faces, make method to check if face is on plane, then get edges of plane.. should be faster
+        # TODO: also do this before merging sockets_gird with the rest, so we do not need to check features on sockets..
         edges = bin.edges().filter_by(
             lambda edge: common.IsEdgeOnPlane(edge, floor_plane)
         )
-
         bin = bin.fillet(self.floor_fillet_radius, edges)
+
         return bin
         

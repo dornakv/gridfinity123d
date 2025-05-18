@@ -1,7 +1,7 @@
 import build123d as bd
 from basePlateMeasurements import BasePlateMeasurements
 from basePlateShim import BasePlateShim
-import constants
+from retentionSocket import RetentionSocket
 import common
 
 class BasePlate(bd.BasePartObject):
@@ -68,79 +68,21 @@ class BasePlate(bd.BasePartObject):
     @property 
     def height(self): return self._measurements.height
     @property
-    def top_chamfer_height(self): return self._measurements.top_chamfer_height
-    @property
-    def top_chamfer_width(self): return self._measurements.top_chamfer_width
-    @property
-    def middle_chamfer_height(self): return self._measurements.middle_chamfer_height
-    @property
-    def middle_chamfer_width(self): return self._measurements.middle_chamfer_width
-    @property
-    def bottom_chamfer_height(self): return self._measurements.bottom_chamfer_height
-    @property
-    def bottom_chamfer_width(self): return self._measurements.bottom_chamfer_width
-    @property
-    def top_ledge_width(self): return self._measurements.top_ledge_width
+    def retention_socket_measurements(self): return self._measurements.retention_socket_measurements
     @property
     def tolerance(self): return self._measurements.tolerance
 
-    # TODO: Use RetentionSocket
-    def _get_hole(self):
-        floor = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.bottom_chamfer_width + self.top_ledge_width),
-            self.radius - self.top_chamfer_width - self.middle_chamfer_width - self.bottom_chamfer_width
-        ) 
-
-        middle_low = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width + self.middle_chamfer_width + self.top_ledge_width),
-            self.radius - self.top_chamfer_width - self.middle_chamfer_width
-        )
-
-        middle_high = common.GetRoundedRect(
-            self.x_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
-            self.y_unit_dim - 2 * (self.top_chamfer_width + self.top_ledge_width),
-            self.radius - self.top_chamfer_width
-        )
-
-        top = common.GetRoundedRect(
-            self.x_unit_dim - 2 * self.top_ledge_width,
-            self.y_unit_dim - 2 * self.top_ledge_width,
-            self.radius
-        )
-
-        plane: bd.Plane = bd.Plane.XY
-        layers = [plane * floor]
-        if self.bottom_chamfer_height > constants.RESOLUTION:
-            plane = plane.offset(self.bottom_chamfer_height)
-            layers.append(plane * middle_low)
-        if self.middle_chamfer_height > constants.RESOLUTION:
-            plane = plane.offset(self.middle_chamfer_height)
-            layers.append(plane * middle_high)
-        if self.top_chamfer_height > constants.RESOLUTION:
-            plane = plane.offset(self.top_chamfer_height)
-            layers.append(plane * top)
-        
-        if len(layers) <= 1:
-            raise ValueError(f"None of the layers high enough ({constants.RESOLUTION=}): {self.bottom_chamfer_height=}, {self.middle_chamfer_height=}, {self.top_chamfer_height=}")
-        
-        return bd.loft(
-            layers,
-            ruled=True
-        )
-    
     def get_outline_block(self):
         outline = common.GetRoundedRect(
             (self.x_units * self.x_unit_dim) - (2 * self.tolerance),
             (self.y_units * self.y_unit_dim) - (2 * self.tolerance),
             radius=self.radius
         )
-        return bd.extrude(bd.make_face(outline), self.height)
+        return bd.extrude(bd.make_face(outline), self.height/2, both=True)
 
     def _get_part(self):
-        hole = self._get_hole()
-        holes_grid = []
+        retention_socket = RetentionSocket(self.retention_socket_measurements)
+        sockets_grid = []
         for x in range(self.x_units):
             for y in range(self.y_units):
                 # TODO: Rewrite cleaner 
@@ -148,8 +90,8 @@ class BasePlate(bd.BasePartObject):
                 x_center = x * self.x_unit_dim - ( (self.x_units - 1) * self.x_unit_dim / 2)
                 y_center = y * self.y_unit_dim - ( (self.y_units - 1) * self.y_unit_dim / 2)
 
-                holes_grid.append(bd.Pos(x_center, y_center) * hole)
+                sockets_grid.append(bd.Pos(x_center, y_center) * retention_socket)
 
         outline_block = self.get_outline_block()
 
-        return outline_block - holes_grid
+        return outline_block - sockets_grid
