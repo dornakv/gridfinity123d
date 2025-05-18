@@ -1,6 +1,17 @@
 # WIP
 This is not yet ready for use by anyone. Many important things are missing, many are broken. I am not yet versioning this at all...
 
+First release will be after all essentials features are complete
+
+## Missing Essential Features
+- [ ] Stacking lip
+- [ ] Blank bin
+
+## Missing Extra Features
+- [ ] Eco bin
+- [ ] Magnet holes
+- [ ] Screw holes
+
 # Requirements
 Python 3.13.2
 build123d 0.9.1
