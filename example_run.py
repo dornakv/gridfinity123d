@@ -3,8 +3,6 @@ from ocp_vscode import show
 from basePlate import BasePlate
 from basePlateMeasurements import BasePlateMeasurements
 from basePlateShimMeasurements import BasePlateShimMeasurements
-from binMeasurements import BinMeasurements
-from bin import Bin
 from basePlateShim import BasePlateShim
 
 import build123d as bd
@@ -15,7 +13,8 @@ start = time.time()
 measurements = BasePlateMeasurements()
 measurements.max_height = measurements.height - 0.8 * bd.MM
 
-shimMeasurements = BasePlateShimMeasurements.from_basePlateMeasurements(measurements)
+shimMeasurements = \
+    BasePlateShimMeasurements.from_basePlateMeasurements(measurements)
 
 shim = BasePlateShim.offset_from_corner(300 * bd.MM,
                                         230 * bd.MM,
