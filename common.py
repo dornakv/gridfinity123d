@@ -11,6 +11,13 @@ def GetRoundedRect(x_dim: float, y_dim: float, radius: float) -> bd.BaseSketchOb
         return bd.RectangleRounded(x_dim, y_dim, radius)
     return bd.Rectangle(x_dim, y_dim)
 
+def IsEdgeOnPlane(edge: bd.Edge, plane: bd.Plane) -> bool:
+    for vertice in edge.vertices():
+        distance = abs((vertice.position - plane.origin).dot(plane.z_dir))  # z_dir is relative to the plane, therefore always normal of the plane
+        if distance > 0:
+            return False
+    return True
+
 # TODO create separate class as bd.BasePartObject
 def GetRetentionSocket(retention_socket_measurements: RetentionSocketMeasurements):
     floor = GetRoundedRect(

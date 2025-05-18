@@ -44,6 +44,8 @@ class Bin(bd.BasePartObject):
     @property
     def radius(self): return self._measurements.radius
     @property
+    def floor_fillet_radius(self): return self._measurements.floor_fillet_radius
+    @property
     def height_unit_dim(self): return self._measurements.height_unit_dim
     @property
     def retention_socket_measurements(self): return self._measurements.retention_socket_measurements
@@ -53,7 +55,7 @@ class Bin(bd.BasePartObject):
     def floor_thickness(self): return self._measurements.floor_thickness
     @property
     def wall_thickness(self): return self._measurements.wall_thickness
-    
+
     def _get_part(self):
         retention_socket = common.GetRetentionSocket(self.retention_socket_measurements)
         sockets_grid = []
@@ -84,8 +86,15 @@ class Bin(bd.BasePartObject):
             wall_face = floor_plane * wall_face
             wall = bd.extrude(wall_face, self.height_units * self.height_unit_dim - self.retention_socket_measurements.height)
 
-        floor_face = floor_plane * bd.make_face(outer_floor_outline)
+        floor_face =  bd.make_face(floor_plane * outer_floor_outline)
         floor = bd.extrude(floor_face, -self.floor_thickness)
 
-        # TODO: Chamfer inner
-        return wall + floor + sockets_grid 
+        # Fillet inner edges at floor
+        bin = wall + floor + sockets_grid
+        edges = bin.edges().filter_by(
+            lambda edge: common.IsEdgeOnPlane(edge, floor_plane)
+        )
+
+        bin = bin.fillet(self.floor_fillet_radius, edges)
+        return bin
+        

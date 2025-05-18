@@ -7,6 +7,7 @@ class BinMeasurements():
     y_unit_dim: float = constants.Y_UNIT_DIM
     height_unit_dim: float = constants.HEIGHT_UNIT_DIM
     radius: float = 4 * bd.MM
+    floor_fillet_radius: float = 2 * bd.MM
 
     floor_thickness: float = 2.25 * bd.MM
     wall_thickness: float = 1.2 * bd.MM
